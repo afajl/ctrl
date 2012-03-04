@@ -1,3 +1,5 @@
+* Flytta GenericCommand från ctrl till shell.Command
+  - Låt RemoteCommand avgöra om det ska returna ett LocalCommand / RemoteCommand
 * Sök
 * Fixa loggningen
 * Put, Get funktioner
