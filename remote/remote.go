@@ -10,12 +10,13 @@ import (
 const OnWorkstationName = "WORKSTATION"
 
 type Host struct {
-	Name     string
-	Port     string
-	User     string
-	Keyfiles []string
-    OnWorkstation bool
-
+	Id            string // Unique id for the host, default Name
+	Tags		[]string
+	Name          string // IP or hostname to connect to
+	Port          string
+	User          string
+	Keyfiles      []string
+	OnWorkstation bool
 	RemoteShell string
 	RemoteCd    string
 	RemoteEnv   map[string]string
@@ -24,7 +25,7 @@ type Host struct {
 func NewHost(s string) (*Host, error) {
 	host := &Host{RemoteEnv: make(map[string]string)}
 
-    // copy config settings
+	// copy config settings
 	host.Port = config.StartConfig.Port
 	host.User = config.StartConfig.User
 	host.Keyfiles = config.StartConfig.Keyfiles
@@ -46,12 +47,42 @@ func NewHosts(h []string) (hosts []*Host, err error) {
 	return
 }
 
-func (h *Host) String() string {
-	return h.Name
+func combine(a *Host, b *Host) *Host {
+	c := new(Host)
+	*c = *a
+
+	if b.Id != "" { c.Id = b.Id }
+	c.Tags = append(c.Tags, b.Tags...)
+	if b.Name != "" { c.Name = b.Name }
+	if b.Port != "" { c.Port = b.Port }
+	if b.User != "" { c.User = b.User }
+	c.Keyfiles = append(c.Keyfiles, b.Keyfiles...)
+
+	if b.RemoteShell != "" { c.RemoteShell = b.RemoteShell }
+	if b.RemoteCd != "" { c.RemoteCd = b.RemoteCd }
+	for k, v := range b.RemoteEnv {
+		c.RemoteEnv[k] = v
+	}
+	return c
 }
 
-func (h *Host) uniqueString() string {
-	return fmt.Sprintf("%v@%v:%v", h.User, h.Name, h.Port)
+func Fold(hosts ...*Host) (host *Host) {
+	switch n := len(hosts); n {
+	case 0:
+		// pass
+	case 1:
+		host = hosts[0]
+	default:
+		host = hosts[0]
+		for i := 1; i < n; i++ {
+			host = combine(host, hosts[i])
+		}
+	}
+    return
+}
+
+func (h *Host) String() string {
+	return h.Id
 }
 
 func (h *Host) ConnStr() string {
@@ -150,8 +181,8 @@ func (h *Host) Set(s string) (err error) {
 		return fmt.Errorf("zero length host")
 	}
 
-    if h.Name == OnWorkstationName {
-        h.OnWorkstation = true
-    }
+	if h.Name == OnWorkstationName {
+		h.OnWorkstation = true
+	}
 	return
 }

@@ -9,7 +9,7 @@ var keys = new(keyring)
 var conns = make(map[string]*ssh.ClientConn)
 
 func getConn(host *Host) (*ssh.ClientConn, error) {
-	hostkey := host.uniqueString()
+	hostkey := host.Id
 	if con, ok := conns[hostkey]; ok {
 		return con, nil
 	}
