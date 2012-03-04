@@ -30,7 +30,7 @@ func (c Ctrl) ForHost(host interface{}) Ctrl {
 		}
 		c.host = h
 	case *remote.Host:
-        c.host = new(remote.Host)
+		c.host = new(remote.Host)
 		*c.host = *ht
 	case remote.Host:
 		c.host = &ht
@@ -59,8 +59,6 @@ func (c Ctrl) Host() *remote.Host {
 	return c.host
 }
 
-
-
 // Generic commands
 type GenericCommand interface {
 	CombinedOutput() (string, error)
@@ -70,20 +68,20 @@ type GenericCommand interface {
 type CommandBuilder func(Ctrl, string, ...interface{}) (GenericCommand, error)
 
 func (c Ctrl) outputTry(cmdbuild CommandBuilder, cmdf string, a ...interface{}) (string, error) {
-    cmd, err := cmdbuild(c, cmdf, a...)
-    if err != nil {
-        return "", err
-    }
-    c.Log(cmd)
-    return cmd.CombinedOutput()
+	cmd, err := cmdbuild(c, cmdf, a...)
+	if err != nil {
+		return "", err
+	}
+	c.Log(cmd)
+	return cmd.CombinedOutput()
 }
 
 func (c Ctrl) output(cmdbuild CommandBuilder, cmdf string, a ...interface{}) string {
-    out, err := c.outputTry(cmdbuild, cmdf, a...)
-    if err != nil {
-        c.run.Fail(err)
-    }
-    return out
+	out, err := c.outputTry(cmdbuild, cmdf, a...)
+	if err != nil {
+		c.run.Fail(err)
+	}
+	return out
 }
 
 // Local
@@ -96,21 +94,19 @@ func (c Ctrl) LocalCommand(cmdf string, args ...interface{}) (GenericCommand, er
 	return cmd, err
 }
 
-
 func (c Ctrl) LocalTry(cmdf string, args ...interface{}) (string, error) {
-    return c.outputTry((Ctrl).LocalCommand, cmdf, args...)
+	return c.outputTry((Ctrl).LocalCommand, cmdf, args...)
 }
 
 func (c Ctrl) Local(cmdf string, args ...interface{}) string {
-    return c.output((Ctrl).LocalCommand, cmdf, args...)
+	return c.output((Ctrl).LocalCommand, cmdf, args...)
 }
-
 
 // Remote
 func (c Ctrl) RemoteCommand(cmdf string, args ...interface{}) (GenericCommand, error) {
-    if c.host.OnWorkstation {
-        return c.localRemoteCommand(cmdf, args...)
-    }
+	if c.host.OnWorkstation {
+		return c.localRemoteCommand(cmdf, args...)
+	}
 	rcmd, err := remote.Command(c.host, cmdf, args...)
 	if err != nil {
 		return nil, err
@@ -124,20 +120,19 @@ func (c Ctrl) RemoteCommand(cmdf string, args ...interface{}) (GenericCommand, e
 
 func (c Ctrl) localRemoteCommand(cmdf string, args ...interface{}) (GenericCommand, error) {
 	cmd := shell.Command(cmdf, args...)
-    cmd.Dir = c.host.RemoteCd
+	cmd.Dir = c.host.RemoteCd
 	cmd.Shell = c.host.RemoteShell
 	cmd.Logger = c.log
 	err := cmd.SetEnvMap(c.host.RemoteEnv)
 	return cmd, err
 }
- 
 
 func (c Ctrl) RemoteTry(cmdf string, args ...interface{}) (string, error) {
-    return c.outputTry((Ctrl).RemoteCommand, cmdf, args...)
+	return c.outputTry((Ctrl).RemoteCommand, cmdf, args...)
 }
 
 func (c Ctrl) Remote(cmdf string, args ...interface{}) string {
-    return c.output((Ctrl).RemoteCommand, cmdf, args...)
+	return c.output((Ctrl).RemoteCommand, cmdf, args...)
 }
 
 // Log
@@ -156,6 +151,3 @@ func (c Ctrl) Logf(format string, a ...interface{}) {
 func (c Ctrl) Log(a ...interface{}) {
 	c.log.Println(a...)
 }
-
-
-

@@ -50,7 +50,7 @@ func ShCommandf(sh string, cmdf string, a ...interface{}) (shell string, shellar
 	shparts := strings.Split(sh, " ")
 
 	shell = shparts[0]
-    shellargs = shparts[1:]
+	shellargs = shparts[1:]
 	cmd, err = Commandf(cmdf, a...)
 	return
 }
@@ -84,11 +84,11 @@ func Command(cmdf string, a ...interface{}) *Cmd {
 }
 
 func (c *Cmd) String() string {
-    _, _, cmd, err := ShCommandf(c.Shell, c.Format, c.FormatArgs...)
-    if err != nil {
-        return "error formatting cmd: " + err.Error()
-    }
-    return cmd
+	_, _, cmd, err := ShCommandf(c.Shell, c.Format, c.FormatArgs...)
+	if err != nil {
+		return "error formatting cmd: " + err.Error()
+	}
+	return cmd
 }
 
 func (c *Cmd) SetEnvMap(env map[string]string) (err error) {
@@ -97,22 +97,21 @@ func (c *Cmd) SetEnvMap(env map[string]string) (err error) {
 }
 
 func (c *Cmd) formatCmd() (shell string, args []string, err error) {
-    var relShell, cmd string
+	var relShell, cmd string
 	relShell, args, cmd, err = ShCommandf(c.Shell, c.Format, c.FormatArgs...)
-    if err != nil {
-        return
-    }
+	if err != nil {
+		return
+	}
 	shell, err = exec.LookPath(relShell)
 	if err != nil {
 		shell = relShell
 	}
-    args = append(append([]string{shell}, args...), cmd)
-    return
+	args = append(append([]string{shell}, args...), cmd)
+	return
 }
 
-
 func (c *Cmd) Start() (err error) {
-    c.Path, c.Args, err = c.formatCmd()
+	c.Path, c.Args, err = c.formatCmd()
 	if err != nil {
 		return
 	}

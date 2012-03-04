@@ -31,11 +31,11 @@ func Command(host *Host, cmdf string, a ...interface{}) (cmd *Cmd, err error) {
 }
 
 func (c *Cmd) String() string {
-    _, _, cmd, err := shell.ShCommandf(c.Shell, c.Format, c.FormatArgs...)
-    if err != nil {
-        return "error formatting cmd: " + err.Error()
-    }
-    return cmd
+	_, _, cmd, err := shell.ShCommandf(c.Shell, c.Format, c.FormatArgs...)
+	if err != nil {
+		return "error formatting cmd: " + err.Error()
+	}
+	return cmd
 }
 
 func (c *Cmd) SetEnvMap(env map[string]string) error {
@@ -59,10 +59,10 @@ func (c *Cmd) formatCmd() (string, error) {
 }
 
 func (c *Cmd) Start() error {
-    cmd, err := c.formatCmd()
-    if err != nil {
-        return err
-    }
+	cmd, err := c.formatCmd()
+	if err != nil {
+		return err
+	}
 	return c.Session.Start(cmd)
 }
 

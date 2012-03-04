@@ -10,11 +10,11 @@ import (
 const OnWorkstationName = "WORKSTATION"
 
 type Host struct {
-	Name     string
-	Port     string
-	User     string
-	Keyfiles []string
-    OnWorkstation bool
+	Name          string
+	Port          string
+	User          string
+	Keyfiles      []string
+	OnWorkstation bool
 
 	RemoteShell string
 	RemoteCd    string
@@ -24,7 +24,7 @@ type Host struct {
 func NewHost(s string) (*Host, error) {
 	host := &Host{RemoteEnv: make(map[string]string)}
 
-    // copy config settings
+	// copy config settings
 	host.Port = config.StartConfig.Port
 	host.User = config.StartConfig.User
 	host.Keyfiles = config.StartConfig.Keyfiles
@@ -150,8 +150,8 @@ func (h *Host) Set(s string) (err error) {
 		return fmt.Errorf("zero length host")
 	}
 
-    if h.Name == OnWorkstationName {
-        h.OnWorkstation = true
-    }
+	if h.Name == OnWorkstationName {
+		h.OnWorkstation = true
+	}
 	return
 }

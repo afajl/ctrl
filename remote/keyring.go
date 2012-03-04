@@ -50,10 +50,10 @@ func (k *keyring) loadPEM(file string) error {
 	if block == nil {
 		return errors.New("ssh: no key found")
 	}
-    var r interface{}
+	var r interface{}
 	r, err = x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
-	    return err
+		return err
 	}
 	k.keys = append(k.keys, r)
 	return nil

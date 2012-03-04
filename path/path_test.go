@@ -1,6 +1,7 @@
 package path
 
 import (
+	"github.com/afajl/assert"
 	"testing"
 )
 
@@ -32,8 +33,6 @@ func TestCleanPathname(t *testing.T) {
 	}
 	for _, test := range tests {
 		res := CleanPathname(test.path...)
-		if res != test.expect {
-			t.Fatalf("%q != %q", res, test.expect)
-		}
+		assert.Equal(t, res, test.expect)
 	}
 }

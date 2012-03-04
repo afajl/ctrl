@@ -1,7 +1,7 @@
 package queue
 
 import (
-    "fmt"
+	"fmt"
 )
 
 type QueuedCmd func() error
@@ -9,8 +9,6 @@ type QueuedCmd func() error
 type Queue struct {
 	queue []QueuedCmd
 }
-
-
 
 func NewQueue() *Queue {
 	q := &Queue{}
@@ -25,14 +23,14 @@ func (q *Queue) Add(qcmds ...QueuedCmd) {
 }
 
 func (q *Queue) Run() (err error) {
-    defer func() {
-        if e := recover(); e != nil {
-            err = fmt.Errorf("panicked: %v", e)
-        }
-    }()
+	defer func() {
+		if e := recover(); e != nil {
+			err = fmt.Errorf("panicked: %v", e)
+		}
+	}()
 	for _, qcmd := range q.queue {
-        if err = qcmd(); err != nil {
-            return
+		if err = qcmd(); err != nil {
+			return
 		}
 	}
 	return
