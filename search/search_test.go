@@ -8,26 +8,24 @@ import (
 )
 
 type testSearcher struct {
-	got_byname string
+	got_byname []string
 	got_bytag  []string
 }
 
-func (t *testSearcher) ByName(s string) ([]*remote.Host, error) {
+func (t *testSearcher) Name(s ...string) ([]*remote.Host, error) {
 	t.got_byname = s
 	return nil, nil
 }
 
-func (t *testSearcher) ByTags(s ...string) ([]*remote.Host, error) {
+func (t *testSearcher) Tags(s ...string) ([]*remote.Host, error) {
 	t.got_bytag = s
 	return nil, nil
 }
 
-func clearState() {
-	searcherFacs = make([]SearcherFac, 0, 2)
-}
-
-func TestSetSourcesOk(t *testing.T) {
-	defer clearState()
+func TestGlobalSearcher(t *testing.T) {
+	defer func() {
+		globalSearcher = NewMultiSearcher()
+	}()
 
 	var got_scheme string
 
@@ -36,27 +34,26 @@ func TestSetSourcesOk(t *testing.T) {
 		return &testSearcher{}, nil
 	}
 	Register(facAny)
-	err := SetSources([]string{"myscheme://path"})
+	err := AddSource("myscheme://path")
 	if err != nil {
-		t.Fatal("SetSources failed", err)
+		t.Fatal("AddSource failed", err)
 	}
 	assert.Equal(t, got_scheme, "myscheme")
 }
 
 func TestSetSourcesNoHandler(t *testing.T) {
-	defer clearState()
 	facNone := func(u *url.URL) (Searcher, error) {
 		return nil, nil
 	}
-	Register(facNone)
-	err := SetSources([]string{"myscheme://path"})
+	ms := NewMultiSearcher()
+	ms.Register(facNone)
+	err := ms.AddSource("myscheme://path")
 	if err == nil {
-		t.Fatalf("Setsources should fail when no handlers")
+		t.Fatalf("AddSource should fail when no handlers")
 	}
 }
 
 func TestSetSourcesOrdering(t *testing.T) {
-	defer clearState()
 	var called = 1
 	facOne := func(u *url.URL) (Searcher, error) {
 		called *= 10
@@ -66,10 +63,11 @@ func TestSetSourcesOrdering(t *testing.T) {
 		called--
 		return &testSearcher{}, nil
 	}
-	Register(facOne)
-	Register(facTwo)
+	ms := NewMultiSearcher()
+	ms.Register(facOne)
+	ms.Register(facTwo)
 
-	err := SetSources([]string{"myscheme://path"})
+	err := ms.AddSource("myscheme://path")
 	if err != nil {
 		t.Fatal("SetSources failed", err)
 	}
