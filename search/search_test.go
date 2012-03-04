@@ -8,18 +8,22 @@ import (
 )
 
 type testSearcher struct {
-	got_byname []string
-	got_bytag  []string
+	got_id  []string
+	got_tag []string
 }
 
-func (t *testSearcher) Name(s ...string) ([]*remote.Host, error) {
-	t.got_byname = s
+func (t *testSearcher) Id(s ...string) ([]*remote.Host, error) {
+	t.got_id = s
 	return nil, nil
 }
 
 func (t *testSearcher) Tags(s ...string) ([]*remote.Host, error) {
-	t.got_bytag = s
+	t.got_tag = s
 	return nil, nil
+}
+
+func (t *testSearcher) String() string {
+	return "testSearcher"
 }
 
 func TestGlobalSearcher(t *testing.T) {
@@ -54,15 +58,20 @@ func TestSetSourcesNoHandler(t *testing.T) {
 }
 
 func TestSetSourcesOrdering(t *testing.T) {
-	var called = 1
+	var callorder [3]int
+	var idx int
+
 	facOne := func(u *url.URL) (Searcher, error) {
-		called *= 10
+		callorder[idx] = 1
+		idx++
 		return &testSearcher{}, nil
 	}
 	facTwo := func(u *url.URL) (Searcher, error) {
-		called--
+		callorder[idx] = 2
+		idx++
 		return &testSearcher{}, nil
 	}
+
 	ms := NewMultiSearcher()
 	ms.Register(facOne)
 	ms.Register(facTwo)
@@ -71,6 +80,6 @@ func TestSetSourcesOrdering(t *testing.T) {
 	if err != nil {
 		t.Fatal("SetSources failed", err)
 	}
-
-	assert.Equal(t, called, 0, "the last added fac should be first")
+	assert.Equal(t, callorder[0], 2, "the last added fac should be first")
+	assert.Equal(t, callorder[1], 1, "the first added fac should be last")
 }
