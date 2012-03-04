@@ -1,37 +1,57 @@
 package search
 
 import (
-    "github.com/afajl/ctrl/remote"
-    "net/url"
+	"errors"
+	"github.com/afajl/ctrl/remote"
+	"net/url"
 )
 
-type Driver interface {
-    ByName(string) ([]*remote.Host, error)
-    ByTags(...string) ([]*remote.Host, error)
-    Handle(url *url.URL) bool
+type SearcherFac func(*url.URL) (Searcher, error)
+
+type Searcher interface {
+	ByName(string) ([]*remote.Host, error)
+	ByTags(...string) ([]*remote.Host, error)
 }
 
-type source struct {
-    source string
-    driver Driver
+var searcherFacs = make([]SearcherFac, 0, 2)
+var searchers []Searcher
+
+// Prepends the searcher factory to the list
+func Register(searcherFac SearcherFac) {
+	if searcherFac == nil {
+		panic("search: Register SearcherFac is nil")
+	}
+	searcherFacs = append([]SearcherFac{searcherFac}, searcherFacs...)
 }
 
-
-var drivers = make(map[string]Driver)
-var sources []source
-
-func Register(name string, driver Driver) {
-    if driver == nil {
-        panic("search: Register driver is nil")
-    }
-    if _, dup := drivers[name]; dup {
-        panic("search: Register called twice for driver" + name)
-    }
-    drivers[name] = driver
+func SetSources(strings []string) error {
+	searchers = make([]Searcher, 0, len(strings))
+	for _, s := range strings {
+		sourceUrl, err := url.Parse(s)
+		if sourceUrl == nil {
+			return errors.New("search: invalid url " + s)
+		}
+		if err != nil {
+			return err
+		}
+		handled := false
+		for _, searcherFac := range searcherFacs {
+			searcher, err := searcherFac(sourceUrl)
+			if err != nil {
+				return err
+			}
+			if searcher != nil {
+				searchers = append(searchers, searcher)
+				handled = true
+			}
+		}
+		if !handled {
+			return errors.New("search: could not find handler for " + s)
+		}
+	}
+	return nil
 }
 
-func AddSources(sourceurls []string) error {
-    for _, sourceurl := range sourceurls {
-
-    }
-}
+//func ByName(s string) ([]*remote.Host, error) {
+//
+//}
