@@ -5,6 +5,7 @@ import (
 	"github.com/afajl/ctrl/config"
 	"github.com/afajl/ctrl/log"
 	"github.com/afajl/ctrl/remote"
+	"github.com/afajl/ctrl/host"
 	"github.com/afajl/ctrl/shell"
 )
 
@@ -12,7 +13,7 @@ type Cmd func(Ctrl) error
 
 type Ctrl struct {
 	config   config.Config
-	host     *remote.Host
+	host     *host.Host
 	run      *Run
 	log, out *log.WriteLogger
 }
@@ -21,18 +22,18 @@ func NewCtrl(run *Run) Ctrl {
 	return Ctrl{run: run, config: *config.StartConfig}
 }
 
-func (c Ctrl) ForHost(host interface{}) Ctrl {
-	switch ht := host.(type) {
+func (c Ctrl) ForHost(h interface{}) Ctrl {
+	switch ht := h.(type) {
 	case string:
-		h, err := remote.NewHost(ht)
+		newh, err := host.FromString(ht)
 		if err != nil {
 			panic(fmt.Sprintf("could not parse host: %s", err))
 		}
-		c.host = h
-	case *remote.Host:
-		c.host = new(remote.Host)
+		c.host = newh
+	case *host.Host:
+		c.host = new(host.Host)
 		*c.host = *ht
-	case remote.Host:
+	case host.Host:
 		c.host = &ht
 	default:
 		panic(fmt.Sprintf("unkown type %q", ht))
@@ -55,7 +56,7 @@ func (c Ctrl) RemoteCd(path string) Ctrl {
 }
 
 // other
-func (c Ctrl) Host() *remote.Host {
+func (c Ctrl) Host() *host.Host {
 	return c.host
 }
 

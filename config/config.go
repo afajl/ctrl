@@ -26,6 +26,7 @@ type Config struct {
 	Logdir  string
 	DontLog bool
 	Hosts   []string
+	Rootdir string
 
 	User     string
 	Port     string

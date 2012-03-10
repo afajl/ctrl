@@ -20,9 +20,11 @@ func FromFile(c *Config, path string) error {
 		return fmt.Errorf("error parsing %s, %s", path, err)
 	}
 
+	c.Rootdir = filepath.Dir(path)
+
 	// set logdir to dirname(path)/defaultLogdir if not set
 	if c.Logdir == "" {
-		c.Logdir = filepath.Join(filepath.Dir(path), defaultLogdir)
+		c.Logdir = filepath.Join(c.Rootdir, defaultLogdir)
 	}
 
 	return nil

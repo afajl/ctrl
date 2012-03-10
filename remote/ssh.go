@@ -5,6 +5,7 @@ import (
 	"code.google.com/p/go.crypto/ssh"
 	"fmt"
 	"github.com/afajl/ctrl/shell"
+	"github.com/afajl/ctrl/host"
 	"io"
 	"strings"
 )
@@ -19,7 +20,7 @@ type Cmd struct {
 	FormatArgs []interface{}
 }
 
-func Command(host *Host, cmdf string, a ...interface{}) (cmd *Cmd, err error) {
+func Command(host *host.Host, cmdf string, a ...interface{}) (cmd *Cmd, err error) {
 	cmd = &Cmd{}
 	cmd.Session, err = newSession(host)
 	if err != nil {
@@ -90,6 +91,5 @@ func (c *Cmd) CombinedOutput() (string, error) {
 }
 
 /*func Put(host *Host, src, target string) error {*/
-/*srctar := exec.Cmd("tar", "czf" "-", src)*/
-
+	/*srctar := exec.Cmd("tar", "czf" "-", src)*/
 /*}*/

@@ -1,6 +1,10 @@
 // TODO:
 //  Fork the log pkg and:
-//   - make out logger use time from start
+//   - make out logger use time from start:
+//     0:2.2  moneyclit: Started deploy
+//     0:2.6  moneyclit: Copying deployable to host
+//     0:15.2 moneyclit: Stopping server
+//
 //   - implement:
 //      OutRed      OutGreen     Out     OutGray
 //      LogErr      LogInfo      Log     LogDebug 
@@ -10,8 +14,8 @@
 //
 //   - make output to writes on a new line prefixed with:
 //     1:32:10 WORKSTATION: ls -l /etc
-//      ! /etc/passwd
-//      ! /etc/hosts
+//      > /etc/passwd
+//      > /etc/hosts
 //
 //   - Use one go routine for run logs and one for every host
 //   See https://github.com/ngmoco/timber/blob/master/timber.go

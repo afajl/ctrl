@@ -3,6 +3,7 @@ package remote
 import (
 	"flag"
 	"testing"
+	"github.com/afajl/ctrl/host"
 )
 
 var (
@@ -16,7 +17,7 @@ func TestFuncPublickeyAuth(t *testing.T) {
 		t.Log("ssh.user not defined, skipping test")
 		return
 	}
-	host, err := NewHost("localhost:22")
+	host, err := host.FromString("localhost:22")
 	if err != nil {
 		t.Fatal(err)
 	}

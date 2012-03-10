@@ -1,20 +1,21 @@
 #!/bin/sh
 
 function gogo {
-    echo _____________________________________________________ 
+	echo
+    echo __________________________________________________________________ 
     go test github.com/afajl/ctrl...
+    #go vet github.com/afajl/ctrl...
 }
     
 
-function gitdiff { 
-    prev=
+function vimcheck { 
+	touch /tmp/vim_saved_file
     while true; do
-        diff="$(git diff --no-color | sum)"
-        if [ "$diff" != "$prev" ]; then
+		if [ -e /tmp/vim_saved_file ]; then
+			rm -f /tmp/vim_saved_file
             gogo
         fi
-        prev="$diff"
-        sleep 1
+        sleep 0.5
     done
 }
 
@@ -28,5 +29,5 @@ function inotify {
 if type -t inotifywait; then
     inotify
 else
-    gitdiff
+    vimcheck
 fi
