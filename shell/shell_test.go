@@ -24,7 +24,7 @@ func TestShellEscape(t *testing.T) {
 		// allowed
 		{islice{[]byte("foo")}, islice{[]byte("foo")}},
 
-        // unescaped
+		// unescaped
 		{islice{1, 3.14}, islice{1, 3.14}},
 		{islice{int8(1), float64(1)}, islice{int8(1), float64(1)}},
 	}
@@ -35,7 +35,7 @@ func TestShellEscape(t *testing.T) {
 			t.Fatalf("wrong len of res: %#v != %#v", test.args, res)
 		}
 		for i := 0; i < len(test.expect); i++ {
-            // test return of []byte
+			// test return of []byte
 			if v, ok := test.expect[i].([]byte); ok {
 				if r, ok := res[i].([]byte); ok {
 					if !bytes.Equal(v, r) {
@@ -87,15 +87,15 @@ func TestCommandf(t *testing.T) {
 
 func TestShCommand(t *testing.T) {
 	type shtest struct {
-		sh, cmd string
-		args    islice
+		sh, cmd   string
+		args      islice
 		expShell  string
 		expShArgs []string
-		expCmd string
+		expCmd    string
 	}
 	shtests := []shtest{
 		{"bash -c", "echo %s", islice{"yes"},
-		 "bash", []string{"-c"}, `echo yes`},
+			"bash", []string{"-c"}, `echo yes`},
 	}
 	for _, test := range shtests {
 		shell, shArgs, cmd, err := ShCommandf(test.sh, test.cmd, test.args...)
@@ -113,18 +113,17 @@ func TestShCommand(t *testing.T) {
 				t.Errorf("arg %d %v != %v", i, shArgs[i], test.expShArgs[i])
 			}
 		}
-        if cmd != test.expCmd {
-            t.Errorf("cmd %v != %v", cmd, test.expCmd)
-        }
+		if cmd != test.expCmd {
+			t.Errorf("cmd %v != %v", cmd, test.expCmd)
+		}
 	}
 }
 
-
 func TestCommandSimple(t *testing.T) {
-    type cmdtest struct {
-        cmdf string
-        args islice
-        exp string
-    }
+	type cmdtest struct {
+		cmdf string
+		args islice
+		exp  string
+	}
 
 }

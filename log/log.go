@@ -39,7 +39,7 @@ import (
 	"os"
 	"path/filepath"
 	"syscall"
-    //"strings"
+	//"strings"
 	"time"
 )
 
@@ -59,9 +59,9 @@ func NewWriteLogger(w io.Writer, prefix string, flags int) *WriteLogger {
 }
 
 func (l *WriteLogger) Write(b []byte) (n int, err error) {
-    n, _ = l.wbuf.Write(b)
-    defer l.wbuf.Reset()
-    err = l.Output(2, l.wbuf.String())
+	n, _ = l.wbuf.Write(b)
+	defer l.wbuf.Reset()
+	err = l.Output(2, l.wbuf.String())
 	return
 }
 

@@ -47,11 +47,11 @@ func getConfig() *config.Config {
 		exit_usage("no hosts specified")
 	}
 
-    return conf
+	return conf
 }
 
 func Start(routes *Routes) {
-    flag.Usage = usage
+	flag.Usage = usage
 	flag.Parse()
 
 	if *listCmds {
@@ -61,14 +61,14 @@ func Start(routes *Routes) {
 
 	run := NewRun()
 
-    conf := getConfig()
+	conf := getConfig()
 
 	run.loggers = log.NewRunLogs(conf.Logdir, os.Args[1:], conf.Verbose, !conf.DontLog)
 	run.Log = run.loggers.GetRunLog()
 	run.Out = run.loggers.GetRunOut()
 
 	var err error
-	if run.Hosts, err = remote.NewHosts(conf.Hosts); err != nil {
+	if run.Hosts, err = remote.ParseHosts(conf.Hosts); err != nil {
 		exit_usage(err)
 	}
 
@@ -76,7 +76,7 @@ func Start(routes *Routes) {
 		exit_usage(err)
 	}
 
-    if err := run.Run(); err != nil {
+	if err := run.Run(); err != nil {
 		run.Fail(err)
 	}
 }
@@ -99,16 +99,16 @@ func (run *Run) QueueCmd(cmd Cmd, hosts ...*remote.Host) {
 }
 
 func (run *Run) Fail(a ...interface{}) {
-    run.Out.Fatalln(append([]interface{}{"run stopped:"}, a...)...)
+	run.Out.Fatalln(append([]interface{}{"run stopped:"}, a...)...)
 }
 
 func usage() {
-    fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTION]... COMMANDS...\n", os.Args[0])
-    flag.PrintDefaults()
+	fmt.Fprintf(os.Stderr, "\nUsage: %s [OPTION]... COMMANDS...\n", os.Args[0])
+	flag.PrintDefaults()
 }
 
 func exit_usage(args ...interface{}) {
-    fmt.Fprintf(os.Stderr, "\nERROR: %s\n\n", fmt.Sprint(args...))
-    usage()
+	fmt.Fprintf(os.Stderr, "\nERROR: %s\n\n", fmt.Sprint(args...))
+	usage()
 	os.Exit(1)
 }

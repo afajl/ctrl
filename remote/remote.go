@@ -11,18 +11,18 @@ const OnWorkstationName = "WORKSTATION"
 
 type Host struct {
 	Id            string // Unique id for the host, default Name
-	Tags		[]string
+	Tags          []string
 	Name          string // IP or hostname to connect to
 	Port          string
 	User          string
 	Keyfiles      []string
 	OnWorkstation bool
-	RemoteShell string
-	RemoteCd    string
-	RemoteEnv   map[string]string
+	RemoteShell   string
+	RemoteCd      string
+	RemoteEnv     map[string]string
 }
 
-func NewHost(s string) (*Host, error) {
+func ParseHost(s string) (*Host, error) {
 	host := &Host{RemoteEnv: make(map[string]string)}
 
 	// copy config settings
@@ -35,11 +35,11 @@ func NewHost(s string) (*Host, error) {
 	return host, err
 }
 
-func NewHosts(h []string) (hosts []*Host, err error) {
+func ParseHosts(h []string) (hosts []*Host, err error) {
 	nr_hosts := len(h)
 	hosts = make([]*Host, nr_hosts)
 	for i := 0; i < nr_hosts; i++ {
-		hosts[i], err = NewHost(h[i])
+		hosts[i], err = ParseHost(h[i])
 		if err != nil {
 			return
 		}
@@ -47,39 +47,39 @@ func NewHosts(h []string) (hosts []*Host, err error) {
 	return
 }
 
-func combine(a *Host, b *Host) *Host {
-	c := new(Host)
-	*c = *a
+// TODO test
+func Update(orig *Host, src *Host) *Host {
+	a := new(Host)
+	*a = *orig
+	var b = src
 
-	if b.Id != "" { c.Id = b.Id }
-	c.Tags = append(c.Tags, b.Tags...)
-	if b.Name != "" { c.Name = b.Name }
-	if b.Port != "" { c.Port = b.Port }
-	if b.User != "" { c.User = b.User }
-	c.Keyfiles = append(c.Keyfiles, b.Keyfiles...)
+	if b.Id != "" {
+		a.Id = b.Id
+	}
+	a.Tags = append(a.Tags, b.Tags...)
+	if b.Name != "" {
+		a.Name = b.Name
+	}
+	if b.Port != "" {
+		a.Port = b.Port
+	}
+	if b.User != "" {
+		a.User = b.User
+	}
+	a.Keyfiles = append(a.Keyfiles, b.Keyfiles...)
 
-	if b.RemoteShell != "" { c.RemoteShell = b.RemoteShell }
-	if b.RemoteCd != "" { c.RemoteCd = b.RemoteCd }
+	if b.RemoteShell != "" {
+		a.RemoteShell = b.RemoteShell
+	}
+	if b.RemoteCd != "" {
+		a.RemoteCd = b.RemoteCd
+	}
 	for k, v := range b.RemoteEnv {
-		c.RemoteEnv[k] = v
+		a.RemoteEnv[k] = v
 	}
-	return c
+	return a
 }
 
-func Fold(hosts ...*Host) (host *Host) {
-	switch n := len(hosts); n {
-	case 0:
-		// pass
-	case 1:
-		host = hosts[0]
-	default:
-		host = hosts[0]
-		for i := 1; i < n; i++ {
-			host = combine(host, hosts[i])
-		}
-	}
-    return
-}
 
 func (h *Host) String() string {
 	return h.Id

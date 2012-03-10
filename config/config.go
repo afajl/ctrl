@@ -16,7 +16,7 @@ De egenskaper config bör ha (i ordning) är:
 package config
 
 import (
-    "os/user"
+	"os/user"
 )
 
 var DefaultConfig *Config
@@ -26,6 +26,8 @@ type Config struct {
 	Logdir  string
 	DontLog bool
 	Hosts   []string
+	Rootdir string
+
 
 	User     string
 	Port     string
@@ -37,12 +39,12 @@ type Config struct {
 }
 
 func init() {
-    c := &Config{}
-    if u, err := user.Current(); err == nil {
-        c.User = u.Username
-    }
-    c.Port = "22"
-    DefaultConfig = c
+	c := &Config{}
+	if u, err := user.Current(); err == nil {
+		c.User = u.Username
+	}
+	c.Port = "22"
+	DefaultConfig = c
 }
 
 func NewConfig() *Config {

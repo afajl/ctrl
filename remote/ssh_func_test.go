@@ -16,7 +16,7 @@ func TestFuncPublickeyAuth(t *testing.T) {
 		t.Log("ssh.user not defined, skipping test")
 		return
 	}
-	host, err := NewHost("localhost:22")
+	host, err := ParseHost("localhost:22")
 	if err != nil {
 		t.Fatal(err)
 	}

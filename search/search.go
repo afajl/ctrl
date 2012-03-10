@@ -7,16 +7,9 @@ import (
 	"net/url"
 )
 
-var globalSearcher = NewMultiSearcher()
-
-func Register(searcherFac SearcherFac) {
-	globalSearcher.Register(searcherFac)
-}
-
-func AddSource(rawurls ...string) error {
-	return globalSearcher.AddSource(rawurls...)
-}
-
+// Factory that should return a Searcher set up
+// for the url or nil if it doesnt want to handle
+// this url
 type SearcherFac func(*url.URL) (Searcher, error)
 
 type Searcher interface {
@@ -25,122 +18,135 @@ type Searcher interface {
 	String() string
 }
 
+// Global searcher
+var globalSearcher = NewMultiSearcher()
+
+func Register(scheme string, searcherFac SearcherFac) {
+	globalSearcher.Register(scheme, searcherFac)
+}
+
+func AddUrl(rawurls ...string) error {
+	return globalSearcher.AddUrl(rawurls...)
+}
+
+
+
+
 type MultiSearcher struct {
-	searcherFacs []SearcherFac
+	searcherFacs map[string]SearcherFac
 	searchers    []Searcher
-	sourcesAdded bool
 }
 
 func NewMultiSearcher() *MultiSearcher {
-	s := &MultiSearcher{searcherFacs: make([]SearcherFac, 0, 2),
-		searchers: make([]Searcher, 0, 2)}
+	s := &MultiSearcher{
+		searcherFacs: map[string]SearcherFac{},
+		searchers: []Searcher{},
+	}
 	return s
 }
 
-func (s *MultiSearcher) Register(searcherFac SearcherFac) {
+// Append a new searcher factory. Later added searchers
+// will be tried before previous ones
+func (s *MultiSearcher) Register(scheme string, searcherFac SearcherFac) {
+	if scheme == "" {
+		panic("search: cannot register empty scheme")
+	}
 	if searcherFac == nil {
-		panic("search: Register SearcherFac is nil")
+		panic("search: SearcherFac cannot be nil")
 	}
-	s.searcherFacs = append([]SearcherFac{searcherFac}, s.searcherFacs...)
+	if _, present := s.searcherFacs[scheme]; present {
+		panic("search: duplicate scheme handlers found")
+	}
+	s.searcherFacs[scheme] = searcherFac
 }
 
-func parseUrls(rawurls ...string) ([]*url.URL, error) {
-	urls := make([]*url.URL, len(rawurls))
-	for i, rawurl := range rawurls {
+
+func (s *MultiSearcher) AddUrl(rawurls ...string) error {
+	for _, rawurl := range rawurls {
 		u, err := url.Parse(rawurl)
-		if u == nil || err != nil {
-			return nil, fmt.Errorf("search: invalid url %s: %s", rawurl, err)
+		if err != nil || u == nil {
+			return fmt.Errorf("search: invalid url %s: %s", rawurl, err)
 		}
-		urls[i] = u
-	}
-	return urls, nil
-}
 
-func (s *MultiSearcher) getSearcher(url *url.URL) (Searcher, error) {
-	for _, searcherFac := range s.searcherFacs {
-		searcher, err := searcherFac(url)
-		if err != nil {
-			return nil, err
+		searcherFac, present := s.searcherFacs[u.Scheme]
+		if !present {
+			return errors.New("search: no handler found for scheme: " + u.Scheme)
 		}
-		if searcher != nil {
-			return searcher, nil
-		}
-	}
-	return nil, errors.New("search: no handler for: " + url.String())
-}
 
-func (s *MultiSearcher) AddSource(rawurls ...string) error {
-	urls, err := parseUrls(rawurls...)
-	if err != nil {
-		return err
-	}
-	for _, u := range urls {
-		searcher, err := s.getSearcher(u)
+		searcher, err := searcherFac(u)
 		if err != nil {
 			return err
 		}
 		s.searchers = append(s.searchers, searcher)
 	}
-	s.sourcesAdded = true
 	return nil
 }
 
-func verifyMatches(hosts []*remote.Host) error {
-	var seen = make(map[string]bool, len(hosts))
-	for _, host := range hosts {
-		if host.Id == "" {
-			return errors.New("search: found zero length id: " + host.Id)
-		}
-		if _, duplicate := seen[host.Id]; duplicate {
-			return errors.New("search: found duplicate match: " + host.Id)
-		}
-		seen[host.Id] = true
+
+// Return hosts matching Ids. Order is undefined.
+func (s *MultiSearcher) Id(ids ...string) (hosts []*remote.Host, err error) {
+    fn := func(searcher Searcher) ([]*remote.Host, error) {
+		return searcher.Id(ids...)
 	}
-	return nil
+	return searchTempl(s.searchers, fn)
+
 }
 
-func groupMatches(matches [][]*remote.Host) ([]*remote.Host, error) {
-	var hostmap = make(map[string][]*remote.Host)
-	for _, hosts := range matches {
+// Return hosts that has all tags. Order is undefined.
+func (s *MultiSearcher) Tags(tags ...string) (hosts []*remote.Host, err error) {
+    fn := func(searcher Searcher) ([]*remote.Host, error) {
+		return searcher.Tags(tags...)
+	}
+	return searchTempl(s.searchers, fn)
+}
+
+
+type searcherDelegate func(Searcher) ([]*remote.Host, error)
+
+func searchTempl(searchers []Searcher, fn searcherDelegate) (hosts []*remote.Host, err error) {
+	if len(searchers) == 0 {
+		return nil, errors.New("no sources added")
+	}
+	var idHost = map[string]*remote.Host{}
+
+	for _, searcher := range searchers {
+		if hosts, err = fn(searcher); err != nil {
+			return
+		}
+		if err := checkHosts(hosts); err != nil {
+			return nil, fmt.Errorf("%s: %s", searcher, err)
+		}
 		for _, host := range hosts {
-			groups, seen := hostmap[host.Id]
-			if !seen {
-				hostmap[host.Id] = []*remote.Host{host}
+			if v, present := idHost[host.Id]; present {
+				idHost[host.Id] = remote.Update(v, host)
 			} else {
-				hostmap[host.Id] = append(groups, host)
+				idHost[host.Id] = host
 			}
 		}
 	}
-	return foldHosts(hostmap)
+    var res = make([]*remote.Host, 0, len(idHost))
+	for _, v := range idHost {
+		res = append(res, v)
+	}
+	return res, nil
 }
 
-func foldHosts(hostgroups map[string][]*remote.Host) ([]*remote.Host, error) {
-	var hostlist = make([]*remote.Host, 0, len(hostgroups))
-	for _, hosts := range hostgroups {
-		host := remote.Fold(hosts...)
-		hostlist = append(hostlist, host)
+func checkHosts(hosts []*remote.Host) error {
+	if hosts == nil {
+		return errors.New("hosts nil")
 	}
-	return hostlist, nil
-}
-
-func (s *MultiSearcher) Id(ids ...string) (hosts []*remote.Host, err error) {
-	if !s.sourcesAdded {
-		return nil, errors.New("search: add source before starting search")
-	}
-
-	var allmatches = make([][]*remote.Host, 0, len(s.searchers))
-	for i, searcher := range s.searchers {
-		if hosts, err = searcher.Id(ids...); err != nil {
-			return
+	var seen = map[string]int{}
+	for i, h := range hosts {
+		if h == nil {
+			return fmt.Errorf("nil host at pos %d", i)
 		}
-		if err = verifyMatches(hosts); err != nil {
-			return nil, fmt.Errorf("search: %s: %s", searcher, err)
+		if h.Id == "" {
+			return fmt.Errorf("empty Id for host at pos %d", i)
 		}
-		allmatches[i] = hosts
+		if v, duplicate := seen[h.Id]; duplicate {
+			return fmt.Errorf("duplicate Id '%s' at pos: %d, %d", h.Id, v, i)
+		}
+		seen[h.Id] = i
 	}
-	return groupMatches(allmatches)
+	return nil
 }
-
-//func ByName(s string) ([]*remote.Host, error) {
-//
-//}

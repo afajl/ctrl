@@ -42,7 +42,7 @@ func FromFlags(c *Config) {
 	if *hosts != nil {
 		c.Hosts = *hosts
 	}
-    if *keyfile != "" {
-        c.Keyfiles = append(c.Keyfiles, *keyfile)
-    }
+	if *keyfile != "" {
+		c.Keyfiles = append(c.Keyfiles, *keyfile)
+	}
 }
