@@ -28,7 +28,6 @@ type Config struct {
 	Hosts   []string
 	Rootdir string
 
-
 	User     string
 	Port     string
 	Keyfiles []string

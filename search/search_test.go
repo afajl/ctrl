@@ -2,22 +2,22 @@ package search
 
 import (
 	"github.com/afajl/assert"
-	"github.com/afajl/ctrl/remote"
+	"github.com/afajl/ctrl/host"
 	"net/url"
 	"testing"
 	"errors"
 )
 
 type testSearcher struct {
-	ret []*remote.Host
+	ret []*host.Host
 	ret_err error
 }
 
-func (t *testSearcher) Id(s ...string) ([]*remote.Host, error) {
+func (t *testSearcher) Id(s ...string) ([]*host.Host, error) {
 	return t.ret, t.ret_err
 }
 
-func (t *testSearcher) Tags(s ...string) ([]*remote.Host, error) {
+func (t *testSearcher) Tags(s ...string) ([]*host.Host, error) {
 	return t.Id(s...)
 }
 
@@ -25,7 +25,7 @@ func (t *testSearcher) String() string {
 	return "testSearcher"
 }
 
-type rhl []*remote.Host
+type rhl []*host.Host
 
 type searcherSetup struct {
 	scheme string
@@ -96,8 +96,8 @@ func TestBadSearchers(t *testing.T) {
 	setup := []searcherSetup{
 		{"any", rhl{nil},  nil},  // nil host
 		{"any", nil,  nil},       // nil hosts
-		{"any", rhl{&remote.Host{Id: ""}}, nil}, // empty id
-		{"any", rhl{&remote.Host{Id: "d"}, &remote.Host{Id: "d"}}, nil}, // duplicate
+		{"any", rhl{&host.Host{Id: ""}}, nil}, // empty id
+		{"any", rhl{&host.Host{Id: "d"}, &host.Host{Id: "d"}}, nil}, // duplicate
 		{"any", rhl{},  errors.New("err")}, // error
 	}
 
@@ -113,8 +113,8 @@ func TestBadSearchers(t *testing.T) {
 
 func TestSearchUrlOrder(t *testing.T) {
 	setup := []searcherSetup{
-		{"ascheme", rhl{&remote.Host{Id: "x", Name: "a"}},  nil},
-		{"bscheme", rhl{&remote.Host{Id: "x", Name: "b"}},  nil},
+		{"ascheme", rhl{&host.Host{Id: "x", Name: "a"}},  nil},
+		{"bscheme", rhl{&host.Host{Id: "x", Name: "b"}},  nil},
 	}
 
 	ms := buildMultiSearcher(setup...)
@@ -132,12 +132,12 @@ func TestSearchUrlOrder(t *testing.T) {
 
 func TestSearchConcatenationHosts(t *testing.T) {
 	setup := []searcherSetup{
-		{"ascheme", rhl{&remote.Host{Id: "x", Name: "xa"},
-					    &remote.Host{Id: "y", Name: "ya"}},  nil},
-		{"bscheme", rhl{&remote.Host{Id: "y", Name: "yb"}},  nil},
+		{"ascheme", rhl{&host.Host{Id: "x", Name: "xa"},
+					    &host.Host{Id: "y", Name: "ya"}},  nil},
+		{"bscheme", rhl{&host.Host{Id: "y", Name: "yb"}},  nil},
 
-		{"cscheme", rhl{&remote.Host{Id: "x", Name: "xc"},
-						&remote.Host{Id: "y", Name: "yc"}},  nil},
+		{"cscheme", rhl{&host.Host{Id: "x", Name: "xc"},
+						&host.Host{Id: "y", Name: "yc"}},  nil},
 	}
 
 	ms := buildMultiSearcher(setup...)

@@ -2,8 +2,8 @@ package search
 
 import (
 	"testing"
-	//"github.com/afajl/assert"
-	//"github.com/afajl/ctrl/remote"
+	"github.com/afajl/assert"
+	"github.com/afajl/ctrl/host"
 	"github.com/afajl/ctrl/config"
 	"net/url"
 	"os"
@@ -100,6 +100,132 @@ func TestParsing(t *testing.T) {
 	}
 }
 
-func TestId(t *testing.T) {
+var test_json = `
+{
+	"a": {
+		"name": "aname",
+		"tags": ["aonly", "all", "ab", "ac"],
+		"port": "8080",
+		"user": "auser",
+		"keyfiles": ["akeyx", "akeyy"],
+		"remoteshell": "bash -a",
+		"remotecd": "/a",
+		"remoteenv": {
+			"aenvx": "x",
+			"aenvy": "y"
+		}
+	},
+	"b": {
+		"name": "bname",
+		"tags": ["bonly", "all", "ab", "bc"],
+		"port": "8080",
+		"user": "buser",
+		"keyfiles": ["bkeyx", "bkeyy"],
+		"remoteshell": "bash -b",
+		"remotecd": "/",
+		"remoteenv": {
+			"benvx": "x",
+			"benvy": "y"
+		}
+	},
+ 	"c": {
+		"name": "cname",
+		"tags": ["conly", "all", "bc", "ac"]
+	}
+}
+`
 
+func jsonTest(t *testing.T) Searcher {
+    js, err := JsonFromReader(strings.NewReader(test_json))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return js
+}
+
+
+func idTest(t *testing.T, ids ...string) []*host.Host {
+	js := jsonTest(t)
+	res, err := js.Id(ids...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+func tagTest(t *testing.T, tags ...string) []*host.Host {
+	js := jsonTest(t)
+	res, err := js.Tags(tags...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
+}
+
+
+
+func TestIdHost(t *testing.T) {
+	res := idTest(t, "a")
+
+	assert.Equal(t, len(res), 1)
+
+	a := res[0]
+
+	assert.Equal(t, a.Id, "a")
+	assert.Equal(t, a.Name, "aname")
+	assert.Equal(t, a.Tags, []string{"ab", "ac", "all", "aonly"})
+	assert.Equal(t, a.Port, "8080")
+	assert.Equal(t, a.User, "auser")
+	assert.Equal(t, a.Keyfiles, []string{"akeyx", "akeyy"})
+	assert.Equal(t, a.RemoteShell, "bash -a")
+	assert.Equal(t, a.RemoteCd, "/a")
+	assert.Equal(t, a.RemoteEnv, map[string]string{"aenvx": "x", "aenvy": "y"})
+}
+
+func TestMultipleIds(t *testing.T) {
+	res := idTest(t, "a", "b")
+
+	assert.Equal(t, len(res), 2)
+
+	a := res[0]
+	b := res[1]
+
+	assert.Equal(t, a.Id, "a")
+	assert.Equal(t, a.Name, "aname")
+	assert.Equal(t, b.Id, "b")
+	assert.Equal(t, b.Name, "bname")
+}
+
+func TestMissingIds(t *testing.T) {
+	res := idTest(t, "X")
+	assert.Equal(t, len(res), 0)
+}
+
+func TestTagSingle(t *testing.T) {
+	res := tagTest(t, "aonly")
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0].Id, "a")
+
+	res = tagTest(t, "conly")
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0].Id, "c")
+}
+
+func TestTagUnion(t *testing.T) {
+	res := tagTest(t, "ab", "ac")
+	assert.Equal(t, len(res), 1)
+	assert.Equal(t, res[0].Id, "a")
+}
+
+func TestTagMany(t *testing.T) {
+	res := tagTest(t, "ac")
+	assert.Equal(t, len(res), 2)
+	for _, r := range res {
+		switch r.Id {
+		case "a", "c":
+			//pass
+		default:
+			t.Fatal("tags should not return id", r.Id)
+		}
+	}
 }

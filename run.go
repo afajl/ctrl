@@ -6,7 +6,7 @@ import (
 	"github.com/afajl/ctrl/config"
 	"github.com/afajl/ctrl/log"
 	"github.com/afajl/ctrl/queue"
-	"github.com/afajl/ctrl/remote"
+	"github.com/afajl/ctrl/host"
 	"os"
 )
 
@@ -18,7 +18,7 @@ var (
 type Run struct {
 	Config   *config.Config
 	Queue    *queue.Queue
-	Hosts    []*remote.Host
+	Hosts    []*host.Host
 	Cmds     []*RoutedCmd
 	Log, Out *log.WriteLogger
 	loggers  *log.RunLogs
@@ -68,7 +68,7 @@ func Start(routes *Routes) {
 	run.Out = run.loggers.GetRunOut()
 
 	var err error
-	if run.Hosts, err = remote.ParseHosts(conf.Hosts); err != nil {
+	if run.Hosts, err = host.FromStrings(conf.Hosts); err != nil {
 		exit_usage(err)
 	}
 
@@ -88,7 +88,7 @@ func (run *Run) Run() error {
 	return run.Queue.Run()
 }
 
-func (run *Run) QueueCmd(cmd Cmd, hosts ...*remote.Host) {
+func (run *Run) QueueCmd(cmd Cmd, hosts ...*host.Host) {
 	for _, host := range hosts {
 		ctrl := NewCtrl(run).ForHost(*host)
 		ctrl.log = run.loggers.GetHostLog(host.Name)

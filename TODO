@@ -1,3 +1,6 @@
+* Flytta json parsning till host
+* Dölj host.Host
+* Tänk igenom Config igen 
 * Sök
 * Fixa loggningen
 * Put, Get funktioner

@@ -3,7 +3,7 @@ package search
 import (
 	"errors"
 	"fmt"
-	"github.com/afajl/ctrl/remote"
+	"github.com/afajl/ctrl/host"
 	"net/url"
 )
 
@@ -13,8 +13,8 @@ import (
 type SearcherFac func(*url.URL) (Searcher, error)
 
 type Searcher interface {
-	Id(...string) ([]*remote.Host, error)
-	Tags(...string) ([]*remote.Host, error)
+	Id(...string) ([]*host.Host, error)
+	Tags(...string) ([]*host.Host, error)
 	String() string
 }
 
@@ -84,8 +84,8 @@ func (s *MultiSearcher) AddUrl(rawurls ...string) error {
 
 
 // Return hosts matching Ids. Order is undefined.
-func (s *MultiSearcher) Id(ids ...string) (hosts []*remote.Host, err error) {
-    fn := func(searcher Searcher) ([]*remote.Host, error) {
+func (s *MultiSearcher) Id(ids ...string) (hosts []*host.Host, err error) {
+    fn := func(searcher Searcher) ([]*host.Host, error) {
 		return searcher.Id(ids...)
 	}
 	return searchTempl(s.searchers, fn)
@@ -93,21 +93,21 @@ func (s *MultiSearcher) Id(ids ...string) (hosts []*remote.Host, err error) {
 }
 
 // Return hosts that has all tags. Order is undefined.
-func (s *MultiSearcher) Tags(tags ...string) (hosts []*remote.Host, err error) {
-    fn := func(searcher Searcher) ([]*remote.Host, error) {
+func (s *MultiSearcher) Tags(tags ...string) (hosts []*host.Host, err error) {
+    fn := func(searcher Searcher) ([]*host.Host, error) {
 		return searcher.Tags(tags...)
 	}
 	return searchTempl(s.searchers, fn)
 }
 
 
-type searcherDelegate func(Searcher) ([]*remote.Host, error)
+type searcherDelegate func(Searcher) ([]*host.Host, error)
 
-func searchTempl(searchers []Searcher, fn searcherDelegate) (hosts []*remote.Host, err error) {
+func searchTempl(searchers []Searcher, fn searcherDelegate) (hosts []*host.Host, err error) {
 	if len(searchers) == 0 {
 		return nil, errors.New("no sources added")
 	}
-	var idHost = map[string]*remote.Host{}
+	var idHost = map[string]*host.Host{}
 
 	for _, searcher := range searchers {
 		if hosts, err = fn(searcher); err != nil {
@@ -116,22 +116,22 @@ func searchTempl(searchers []Searcher, fn searcherDelegate) (hosts []*remote.Hos
 		if err := checkHosts(hosts); err != nil {
 			return nil, fmt.Errorf("%s: %s", searcher, err)
 		}
-		for _, host := range hosts {
-			if v, present := idHost[host.Id]; present {
-				idHost[host.Id] = remote.Update(v, host)
+		for _, h := range hosts {
+			if v, present := idHost[h.Id]; present {
+				idHost[h.Id] = host.Update(v, h)
 			} else {
-				idHost[host.Id] = host
+				idHost[h.Id] = h
 			}
 		}
 	}
-    var res = make([]*remote.Host, 0, len(idHost))
+    var res = make([]*host.Host, 0, len(idHost))
 	for _, v := range idHost {
 		res = append(res, v)
 	}
 	return res, nil
 }
 
-func checkHosts(hosts []*remote.Host) error {
+func checkHosts(hosts []*host.Host) error {
 	if hosts == nil {
 		return errors.New("hosts nil")
 	}

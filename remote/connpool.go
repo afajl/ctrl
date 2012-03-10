@@ -2,13 +2,14 @@ package remote
 
 import (
 	"code.google.com/p/go.crypto/ssh"
+	"github.com/afajl/ctrl/host"
 	"fmt"
 )
 
 var keys = new(keyring)
 var conns = make(map[string]*ssh.ClientConn)
 
-func getConn(host *Host) (*ssh.ClientConn, error) {
+func getConn(host *host.Host) (*ssh.ClientConn, error) {
 	hostkey := host.Id
 	if con, ok := conns[hostkey]; ok {
 		return con, nil
@@ -36,7 +37,7 @@ func getConn(host *Host) (*ssh.ClientConn, error) {
 	return conn, nil
 }
 
-func newSession(host *Host) (*ssh.Session, error) {
+func newSession(host *host.Host) (*ssh.Session, error) {
 	conn, err := getConn(host)
 	if err != nil {
 		return nil, err

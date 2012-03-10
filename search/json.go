@@ -6,10 +6,11 @@ import (
 	"os"
 	"path/filepath"
 	"github.com/afajl/ctrl/config"
-	"github.com/afajl/ctrl/remote"
+	"github.com/afajl/ctrl/host"
 	"io"
 	"bytes"
 	"encoding/json"
+	"sort"
 )
 
 func init() {
@@ -19,7 +20,8 @@ func init() {
 type JsonSearcher struct {
 	id string
 	file io.Reader
-	hosts map[string]*remote.Host
+	hosts map[string]*host.Host
+	tags map[string][]*host.Host
 }
 
 
@@ -59,6 +61,7 @@ func JsonFromReader(r io.Reader) (Searcher, error) {
 	return &JsonSearcher{id: "<io.Reader>", file: r}, nil
 }
 
+
 func (js *JsonSearcher) parse() error {
 	if js.hosts != nil {
 		return nil
@@ -68,26 +71,53 @@ func (js *JsonSearcher) parse() error {
 		return err
 	}
 	if err := json.Unmarshal(buf.Bytes(), &js.hosts); err != nil {
-		return err
+		return fmt.Errorf("json error: %s", err)
 	}
 
-	if _, emptyid := js.hosts[""]; emptyid {
-		return fmt.Errorf("json contains empty id")
+	for id, h := range js.hosts {
+		if id == "" {
+			return fmt.Errorf("json contains empty id")
+		}
+		// sort tags
+		sort.Strings(h.Tags)
+
+		h.Id = id
 	}
 	return nil
 }
 
-func (js *JsonSearcher) Id(s ...string) ([]*remote.Host, error) {
-	if err := js.parse(); err != nil {
-		return nil, err
+
+func (js *JsonSearcher) Id(ids ...string) (hosts []*host.Host, err error) {
+	if err = js.parse(); err != nil {
+		return
 	}
-	return nil, nil
+	for _, id := range ids {
+		host, present := js.hosts[id]
+		if !present {
+			continue
+		}
+		hosts = append(hosts, host)
+	}
+	return
 }
 
-func (js *JsonSearcher) Tags(s ...string) ([]*remote.Host, error) {
-	return nil, nil
+func (js *JsonSearcher) Tags(tags ...string) (hosts []*host.Host, err error) {
+	if err = js.parse(); err != nil {
+		return
+	}
+	NEXT_HOST: for _, h := range js.hosts {
+		for _, tag := range tags {
+			n := sort.SearchStrings(h.Tags, tag)
+			if n == len(h.Tags) || h.Tags[n] != tag {
+				continue NEXT_HOST
+			}
+		}
+		hosts = append(hosts, h)
+	}
+	return
+
 }
 
 func (js *JsonSearcher) String() string {
-	return "testSearcher"
+	return js.id
 }
